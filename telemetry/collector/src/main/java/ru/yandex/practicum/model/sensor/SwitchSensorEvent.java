@@ -7,7 +7,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString(callSuper = true)
-public class SwitchSensorEvent extends SensorEvent {
+public class SwitchSensorEvent extends BaseSensorEvent {
 
     private boolean state;
 

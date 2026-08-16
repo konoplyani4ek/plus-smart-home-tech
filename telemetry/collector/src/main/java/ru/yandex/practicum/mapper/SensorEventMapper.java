@@ -6,10 +6,10 @@ import ru.yandex.practicum.kafka.telemetry.event.MotionSensorAvro;
 import ru.yandex.practicum.kafka.telemetry.event.SensorEventAvro;
 import ru.yandex.practicum.kafka.telemetry.event.SwitchSensorAvro;
 import ru.yandex.practicum.kafka.telemetry.event.TemperatureSensorAvro;
+import ru.yandex.practicum.model.sensor.BaseSensorEvent;
 import ru.yandex.practicum.model.sensor.ClimateSensorEvent;
 import ru.yandex.practicum.model.sensor.LightSensorEvent;
 import ru.yandex.practicum.model.sensor.MotionSensorEvent;
-import ru.yandex.practicum.model.sensor.SensorEvent;
 import ru.yandex.practicum.model.sensor.SwitchSensorEvent;
 import ru.yandex.practicum.model.sensor.TemperatureSensorEvent;
 
@@ -18,7 +18,7 @@ public class SensorEventMapper {
     private SensorEventMapper() {
     }
 
-    public static SensorEventAvro mapToAvro(SensorEvent event) {
+    public static SensorEventAvro mapToAvro(BaseSensorEvent event) {
         Object payload = switch (event.getType()) {
             case CLIMATE_SENSOR_EVENT -> mapClimate((ClimateSensorEvent) event);
             case LIGHT_SENSOR_EVENT -> mapLight((LightSensorEvent) event);
