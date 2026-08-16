@@ -1,4 +1,4 @@
-package ru.yandex.practicum.telemetry.collector;
+package ru.yandex.practicum;
 
 import com.google.protobuf.Empty;
 import io.grpc.Status;
