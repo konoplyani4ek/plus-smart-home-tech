@@ -1,11 +1,12 @@
 package ru.yandex.practicum.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import ru.yandex.practicum.model.hub.HubEvent;
-import ru.yandex.practicum.model.sensor.SensorEvent;
+import ru.yandex.practicum.model.hub.BaseHubEvent;
+import ru.yandex.practicum.model.sensor.BaseSensorEvent;
 import ru.yandex.practicum.service.EventService;
 
 @RestController
@@ -19,12 +20,12 @@ public class EventController {
     }
 
     @PostMapping("/sensors")
-    public void collectSensorEvent(@RequestBody SensorEvent event) {
+    public void collectSensorEvent(@Valid @RequestBody BaseSensorEvent event) {
         eventService.collectSensorEvent(event);
     }
 
     @PostMapping("/hubs")
-    public void collectHubEvent(@RequestBody HubEvent event) {
+    public void collectHubEvent(@Valid @RequestBody BaseHubEvent event) {
         eventService.collectHubEvent(event);
     }
 }

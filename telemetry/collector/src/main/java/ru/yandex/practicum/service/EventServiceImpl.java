@@ -13,8 +13,8 @@ import ru.yandex.practicum.kafka.telemetry.event.HubEventAvro;
 import ru.yandex.practicum.kafka.telemetry.event.SensorEventAvro;
 import ru.yandex.practicum.mapper.HubEventMapper;
 import ru.yandex.practicum.mapper.SensorEventMapper;
-import ru.yandex.practicum.model.hub.HubEvent;
-import ru.yandex.practicum.model.sensor.SensorEvent;
+import ru.yandex.practicum.model.hub.BaseHubEvent;
+import ru.yandex.practicum.model.sensor.BaseSensorEvent;
 import ru.yandex.practicum.serializer.GeneralAvroSerializer;
 
 import java.time.Duration;
@@ -50,7 +50,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public void collectSensorEvent(SensorEvent event) {
+    public void collectSensorEvent(BaseSensorEvent event) {
         log.trace("Получено событие датчика: id={}, hubId={}, type={}",
                 event.getId(), event.getHubId(), event.getType());
 
@@ -59,7 +59,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public void collectHubEvent(HubEvent event) {
+    public void collectHubEvent(BaseHubEvent event) {
         log.trace("Получено событие хаба: hubId={}, type={}",
                 event.getHubId(), event.getType());
 

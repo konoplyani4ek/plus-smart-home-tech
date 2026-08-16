@@ -7,7 +7,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString(callSuper = true)
-public class DeviceRemovedEvent extends HubEvent {
+public class DeviceRemovedEvent extends BaseHubEvent {
 
     private String id;
 

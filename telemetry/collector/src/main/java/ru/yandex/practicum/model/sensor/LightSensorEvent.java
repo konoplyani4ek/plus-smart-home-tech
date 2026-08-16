@@ -7,7 +7,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString(callSuper = true)
-public class LightSensorEvent extends SensorEvent {
+public class LightSensorEvent extends BaseSensorEvent {
 
     private int linkQuality;
     private int luminosity;

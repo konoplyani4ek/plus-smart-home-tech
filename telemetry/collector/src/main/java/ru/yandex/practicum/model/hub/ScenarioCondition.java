@@ -13,4 +13,5 @@ public class ScenarioCondition {
     private ConditionType type;
     private ConditionOperation operation;
     private Integer value;
+    private Boolean boolValue;
 }

@@ -11,13 +11,7 @@ import ru.yandex.practicum.kafka.telemetry.event.HubEventAvro;
 import ru.yandex.practicum.kafka.telemetry.event.ScenarioAddedEventAvro;
 import ru.yandex.practicum.kafka.telemetry.event.ScenarioConditionAvro;
 import ru.yandex.practicum.kafka.telemetry.event.ScenarioRemovedEventAvro;
-import ru.yandex.practicum.model.hub.DeviceAction;
-import ru.yandex.practicum.model.hub.DeviceAddedEvent;
-import ru.yandex.practicum.model.hub.DeviceRemovedEvent;
-import ru.yandex.practicum.model.hub.HubEvent;
-import ru.yandex.practicum.model.hub.ScenarioAddedEvent;
-import ru.yandex.practicum.model.hub.ScenarioCondition;
-import ru.yandex.practicum.model.hub.ScenarioRemovedEvent;
+import ru.yandex.practicum.model.hub.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,7 +21,7 @@ public class HubEventMapper {
     private HubEventMapper() {
     }
 
-    public static HubEventAvro mapToAvro(HubEvent event) {
+    public static HubEventAvro mapToAvro(BaseHubEvent event) {
         Object payload = switch (event.getType()) {
             case DEVICE_ADDED -> mapDeviceAdded((DeviceAddedEvent) event);
             case DEVICE_REMOVED -> mapDeviceRemoved((DeviceRemovedEvent) event);
@@ -78,11 +72,15 @@ public class HubEventMapper {
     }
 
     private static ScenarioConditionAvro mapCondition(ScenarioCondition condition) {
+        Object value = condition.getValue() != null
+                ? condition.getValue()
+                : condition.getBoolValue();
+
         return ScenarioConditionAvro.newBuilder()
                 .setSensorId(condition.getSensorId())
                 .setType(ConditionTypeAvro.valueOf(condition.getType().name()))
                 .setOperation(ConditionOperationAvro.valueOf(condition.getOperation().name()))
-                .setValue(condition.getValue())
+                .setValue(value)
                 .build();
     }
 

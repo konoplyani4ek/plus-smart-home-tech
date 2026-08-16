@@ -2,15 +2,10 @@ package ru.yandex.practicum.model.sensor;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import jakarta.validation.constraints.NotBlank;
 
 import java.time.Instant;
 
-@Getter
-@Setter
-@ToString
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.EXISTING_PROPERTY,
@@ -23,11 +18,49 @@ import java.time.Instant;
         @JsonSubTypes.Type(value = SwitchSensorEvent.class, name = "SWITCH_SENSOR_EVENT"),
         @JsonSubTypes.Type(value = TemperatureSensorEvent.class, name = "TEMPERATURE_SENSOR_EVENT")
 })
-public abstract class SensorEvent {
+public abstract class BaseSensorEvent {
 
+    private String description;
+
+    @NotBlank
     private String id;
+
+    @NotBlank
     private String hubId;
+
     private Instant timestamp = Instant.now();
 
     public abstract SensorEventType getType();
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getHubId() {
+        return hubId;
+    }
+
+    public void setHubId(String hubId) {
+        this.hubId = hubId;
+    }
+
+    public Instant getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(Instant timestamp) {
+        this.timestamp = timestamp;
+    }
 }
