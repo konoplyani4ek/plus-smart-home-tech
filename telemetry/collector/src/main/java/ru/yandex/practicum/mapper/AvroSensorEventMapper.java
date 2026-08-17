@@ -85,9 +85,6 @@ public class AvroSensorEventMapper {
     private static TemperatureSensorAvro toTemperatureSensorAvro(TemperatureSensorEvent obj) {
         TemperatureSensorAvro avroObj = new TemperatureSensorAvro();
 
-        avroObj.setId(obj.getId());
-        avroObj.setHubId(obj.getHubId());
-        avroObj.setTimestamp(obj.getTimestamp());
         avroObj.setTemperatureC(obj.getTemperatureC());
         avroObj.setTemperatureF(obj.getTemperatureF());
 

@@ -1,3 +1,4 @@
+package ru.yandex.practicum.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
