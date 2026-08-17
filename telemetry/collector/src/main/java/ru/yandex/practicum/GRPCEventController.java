@@ -14,6 +14,7 @@ import ru.yandex.practicum.model.hub.BaseHubEvent;
 import ru.yandex.practicum.model.sensor.BaseSensorEvent;
 import ru.yandex.practicum.service.EventService;
 
+
 @GrpcService
 public class GRPCEventController extends CollectorControllerGrpc.CollectorControllerImplBase {
     private final EventService eventService;
@@ -25,9 +26,10 @@ public class GRPCEventController extends CollectorControllerGrpc.CollectorContro
     @Override
     public void collectSensorEvent(SensorEventProto request, StreamObserver<Empty> responseObserver) {
         try {
-            BaseSensorEvent event = ProtoSensorEventMapper.toModel(request);
+            BaseSensorEvent event =
+                    ProtoSensorEventMapper.toModel(request);
 
-            eventService.collectSensorEvent(event);
+            eventService.sendSensorEvent(event);
 
             responseObserver.onNext(Empty.getDefaultInstance());
             responseObserver.onCompleted();
@@ -43,9 +45,10 @@ public class GRPCEventController extends CollectorControllerGrpc.CollectorContro
     @Override
     public void collectHubEvent(HubEventProto request, StreamObserver<Empty> responseObserver) {
         try {
-            BaseHubEvent event = ProtoHubEventMapper.toModel(request);
+            BaseHubEvent event =
+                    ProtoHubEventMapper.toModel(request);
 
-            eventService.collectHubEvent(event);
+            eventService.sendHubEvent(event);
 
             responseObserver.onNext(Empty.getDefaultInstance());
             responseObserver.onCompleted();

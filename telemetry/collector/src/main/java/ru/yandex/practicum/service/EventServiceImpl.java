@@ -11,8 +11,6 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.kafka.telemetry.event.HubEventAvro;
 import ru.yandex.practicum.kafka.telemetry.event.SensorEventAvro;
-import ru.yandex.practicum.mapper.HubEventMapper;
-import ru.yandex.practicum.mapper.SensorEventMapper;
 import ru.yandex.practicum.model.hub.BaseHubEvent;
 import ru.yandex.practicum.model.sensor.BaseSensorEvent;
 import ru.yandex.practicum.serializer.GeneralAvroSerializer;

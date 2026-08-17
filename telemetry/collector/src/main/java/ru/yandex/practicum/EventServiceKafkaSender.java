@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.kafka.telemetry.event.HubEventAvro;
 import ru.yandex.practicum.kafka.telemetry.event.SensorEventAvro;
+import ru.yandex.practicum.mapper.AvroHubEventMapper;
+import ru.yandex.practicum.mapper.AvroSensorEventMapper;
 import ru.yandex.practicum.model.hub.BaseHubEvent;
 import ru.yandex.practicum.model.sensor.BaseSensorEvent;
 import ru.yandex.practicum.service.EventService;
