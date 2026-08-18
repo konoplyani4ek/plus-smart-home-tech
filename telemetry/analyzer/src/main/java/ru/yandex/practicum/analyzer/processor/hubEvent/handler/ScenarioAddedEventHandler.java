@@ -13,6 +13,8 @@ import ru.yandex.practicum.kafka.telemetry.event.ScenarioAddedEventAvro;
 import ru.yandex.practicum.kafka.telemetry.event.ScenarioConditionAvro;
 
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -43,33 +45,49 @@ public class ScenarioAddedEventHandler implements HubEventHandler<ScenarioAddedE
         scenario.setName(payload.getName());
         scenario.setHubId(hubId);
 
-        for (DeviceActionAvro a : payload.getActions()) {
+        // Собираем действия и запоминаем, какому sensorId какое действие соответствует
+        List<DeviceActionAvro> actionsAvro = payload.getActions();
+        List<Action> actions = new ArrayList<>(actionsAvro.size());
+        for (DeviceActionAvro a : actionsAvro) {
             Action action = new Action();
             action.setValue(a.getValue());
-            ActionType type = ActionType.valueOf(a.getType().name());
-            action.setType(type);
-            actionRepository.save(action);
-            log.info("created action={}", action);
-            scenario.getActions().put(a.getSensorId(), action);
+            action.setType(ActionType.valueOf(a.getType().name()));
+            actions.add(action);
         }
+        // Один запрос вместо N
+        List<Action> savedActions = actionRepository.saveAll(actions);
+        for (int i = 0; i < savedActions.size(); i++) {
+            scenario.getActions().put(actionsAvro.get(i).getSensorId(), savedActions.get(i));
+        }
+        log.info("created {} actions", savedActions.size());
 
-        for (ScenarioConditionAvro sc : payload.getConditions()) {
+        // Аналогично для условий
+        List<ScenarioConditionAvro> conditionsAvro = payload.getConditions();
+        List<Condition> conditions = new ArrayList<>(conditionsAvro.size());
+        for (ScenarioConditionAvro sc : conditionsAvro) {
             Condition condition = new Condition();
             condition.setOperation(ConditionOperation.valueOf(sc.getOperation().name()));
             condition.setType(ConditionType.valueOf(sc.getType().name()));
-            Class cl = sc.getValue().getClass();
-            if (cl == Integer.class) {
-                condition.setIntValue((Integer) sc.getValue());
-            } else if (cl == Boolean.class) {
-                condition.setBoolValue((Boolean) sc.getValue());
+
+            Object value = sc.getValue();
+            if (value == null) {
+                // допустимо: union {null, int, boolean} может не содержать значения
+            } else if (value.getClass() == Integer.class) {
+                condition.setIntValue((Integer) value);
+            } else if (value.getClass() == Boolean.class) {
+                condition.setBoolValue((Boolean) value);
             } else {
-                throw new IllegalArgumentException("Unknown value type : " + cl);
+                throw new IllegalArgumentException("Unknown value type : " + value.getClass());
             }
 
-            conditionRepository.save(condition);
-            log.info("created condition={}", condition);
-            scenario.getConditions().put(sc.getSensorId(), condition);
+            conditions.add(condition);
         }
+        // Один запрос вместо N
+        List<Condition> savedConditions = conditionRepository.saveAll(conditions);
+        for (int i = 0; i < savedConditions.size(); i++) {
+            scenario.getConditions().put(conditionsAvro.get(i).getSensorId(), savedConditions.get(i));
+        }
+        log.info("created {} conditions", savedConditions.size());
 
         scenarioRepository.save(scenario);
         log.info("created scenario={}", scenario);
