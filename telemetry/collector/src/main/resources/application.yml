@@ -1,3 +1,24 @@
+logging:
+  level:
+    org:
+      springframework:
+        web: DEBUG
+      zalando:
+        logbook: DEBUG
+
+spring:
+  application:
+    name: smart-home-tech-collector
+
+server:
+  port: 8080
+
+kafka:
+  server: localhost:9092
+  topic:
+    sensor-events: telemetry.sensors.v1
+    hub-events: telemetry.hubs.v1
+
 grpc:
   server:
     port: 59091
