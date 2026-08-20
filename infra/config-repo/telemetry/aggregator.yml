@@ -1,0 +1,12 @@
+spring.application.name=aggregator
+
+
+spring.main.web-application-type=none
+
+kafka.server=localhost:9092
+kafka.consumer.topic=telemetry.sensors.v1
+kafka.producer.topic=telemetry.snapshots.v1
+kafka.consumer.client-id=aggregator-sensor-event-consumer-1
+kafka.consumer.group-id=aggregator.sensor-event-consumers
+kafka.consumer.consume-attempt-timeout-ms=1000
+kafka.retry-period-ms=5000
