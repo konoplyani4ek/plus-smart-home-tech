@@ -1,0 +1,21 @@
+logging:
+  level:
+    org:
+      springframework:
+        web: DEBUG
+      zalando:
+        logbook: DEBUG
+
+
+server:
+  port: 8080
+
+kafka:
+  server: localhost:9092
+  topic:
+    sensor-events: telemetry.sensors.v1
+    hub-events: telemetry.hubs.v1
+
+grpc:
+  server:
+    port: 59091

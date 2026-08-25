@@ -9,7 +9,7 @@ import java.util.List;
 @Getter
 @Setter
 @ToString(callSuper = true)
-public class ScenarioAddedEvent extends HubEvent {
+public class ScenarioAddedEvent extends BaseHubEvent {
 
     private String name;
     private List<ScenarioCondition> conditions;
