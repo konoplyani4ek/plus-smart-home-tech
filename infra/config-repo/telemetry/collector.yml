@@ -6,9 +6,6 @@ logging:
       zalando:
         logbook: DEBUG
 
-spring:
-  application:
-    name: smart-home-tech-collector
 
 server:
   port: 8080
