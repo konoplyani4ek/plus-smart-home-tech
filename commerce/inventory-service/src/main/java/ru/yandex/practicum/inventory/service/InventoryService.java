@@ -13,6 +13,8 @@ import ru.yandex.practicum.inventory.exception.NotFoundException;
 import ru.yandex.practicum.inventory.mapper.InventoryMapper;
 import ru.yandex.practicum.inventory.repository.InventoryRepository;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class InventoryService {
@@ -26,8 +28,12 @@ public class InventoryService {
 
     @Transactional
     public InventoryDto create(UpdateInventoryRequest request) {
-        InventoryRecord record = inventoryRepository.findByProductId(request.productId())
-                .orElseGet(InventoryRecord::new);
+        if (inventoryRepository.findByProductId(request.productId()).isPresent()) {
+            throw new IllegalArgumentException(
+                    "Складская запись для productId=" + request.productId() + " уже существует");
+        }
+
+        InventoryRecord record = new InventoryRecord();
         record.setProductId(request.productId());
         record.setQuantity(request.quantity());
         return InventoryMapper.toDto(inventoryRepository.save(record));
@@ -61,5 +67,12 @@ public class InventoryService {
         return inventoryRepository.findByProductId(productId)
                 .orElseThrow(() -> new NotFoundException(
                         "Складская запись для productId=" + productId + " не найдена"));
+    }
+
+    @Transactional(readOnly = true)
+    public List<InventoryDto> getAll() {
+        return inventoryRepository.findAll().stream()
+                .map(InventoryMapper::toDto)
+                .toList();
     }
 }

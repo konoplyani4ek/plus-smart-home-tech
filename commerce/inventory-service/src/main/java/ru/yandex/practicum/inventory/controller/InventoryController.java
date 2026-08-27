@@ -10,6 +10,8 @@ import ru.yandex.practicum.inventory.dto.ReserveResponse;
 import ru.yandex.practicum.inventory.dto.UpdateInventoryRequest;
 import ru.yandex.practicum.inventory.service.InventoryService;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/inventory")
 @RequiredArgsConstructor
@@ -36,5 +38,10 @@ public class InventoryController {
     @PostMapping("/reserve")
     public ReserveResponse reserve(@Valid @RequestBody ReserveRequest request) {
         return inventoryService.reserve(request);
+    }
+
+    @GetMapping
+    public List<InventoryDto> getAll() {
+        return inventoryService.getAll();
     }
 }
