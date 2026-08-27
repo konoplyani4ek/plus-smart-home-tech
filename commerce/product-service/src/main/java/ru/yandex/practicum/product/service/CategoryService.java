@@ -18,14 +18,12 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
 
-    @Transactional(readOnly = true)
     public List<CategoryDto> getAll() {
         return categoryRepository.findAll().stream()
                 .map(CategoryMapper::toDto)
                 .toList();
     }
 
-    @Transactional(readOnly = true)
     public CategoryDto getById(Long id) {
         return CategoryMapper.toDto(findEntity(id));
     }

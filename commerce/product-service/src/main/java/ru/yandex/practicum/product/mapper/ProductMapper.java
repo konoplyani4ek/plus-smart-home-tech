@@ -1,15 +1,13 @@
-// commerce/product-service/src/main/java/ru/yandex/practicum/product/mapper/ProductMapper.java
 package ru.yandex.practicum.product.mapper;
 
+import lombok.experimental.UtilityClass;
 import ru.yandex.practicum.product.dto.ProductDto;
 import ru.yandex.practicum.product.entity.Product;
 
-public final class ProductMapper {
+@UtilityClass
+public class ProductMapper {
 
-    private ProductMapper() {
-    }
-
-    public static ProductDto toDto(Product product) {
+    public ProductDto toDto(Product product) {
         return new ProductDto(
                 product.getId(),
                 product.getName(),

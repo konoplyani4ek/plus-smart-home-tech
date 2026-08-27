@@ -21,7 +21,6 @@ public class InventoryService {
 
     private final InventoryRepository inventoryRepository;
 
-    @Transactional(readOnly = true)
     public InventoryDto getByProductId(Long productId) {
         return InventoryMapper.toDto(findEntity(productId));
     }
@@ -69,7 +68,6 @@ public class InventoryService {
                         "Складская запись для productId=" + productId + " не найдена"));
     }
 
-    @Transactional(readOnly = true)
     public List<InventoryDto> getAll() {
         return inventoryRepository.findAll().stream()
                 .map(InventoryMapper::toDto)

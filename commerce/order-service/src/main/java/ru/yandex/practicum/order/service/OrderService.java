@@ -48,19 +48,16 @@ public class OrderService {
         return OrderMapper.toDto(orderRepository.save(order));
     }
 
-    @Transactional(readOnly = true)
     public OrderDto getById(Long id) {
         return OrderMapper.toDto(findEntity(id));
     }
 
-    @Transactional(readOnly = true)
     public List<OrderDto> getAll() {
         return orderRepository.findAll().stream()
                 .map(OrderMapper::toDto)
                 .toList();
     }
 
-    @Transactional(readOnly = true)
     public List<OrderDto> getByEmail(String email) {
         return orderRepository.findByCustomerEmail(email).stream()
                 .map(OrderMapper::toDto)

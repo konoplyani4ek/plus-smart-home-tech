@@ -1,14 +1,13 @@
 package ru.yandex.practicum.inventory.mapper;
 
+import lombok.experimental.UtilityClass;
 import ru.yandex.practicum.inventory.dto.InventoryDto;
 import ru.yandex.practicum.inventory.entity.InventoryRecord;
 
-public final class InventoryMapper {
+@UtilityClass
+public class InventoryMapper {
 
-    private InventoryMapper() {
-    }
-
-    public static InventoryDto toDto(InventoryRecord record) {
+    public InventoryDto toDto(InventoryRecord record) {
         return new InventoryDto(
                 record.getId(),
                 record.getProductId(),

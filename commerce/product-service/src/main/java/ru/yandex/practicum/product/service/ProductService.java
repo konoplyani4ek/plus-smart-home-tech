@@ -21,26 +21,23 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryService categoryService;
 
-    @Transactional(readOnly = true)
     public List<ProductDto> getAllActive() {
         return productRepository.findByActiveTrue().stream()
                 .map(ProductMapper::toDto)
                 .toList();
     }
 
-    @Transactional(readOnly = true)
     public ProductDto getById(Long id) {
         return ProductMapper.toDto(findEntity(id));
     }
 
-    @Transactional(readOnly = true)
     public List<ProductDto> getByCategory(Long categoryId) {
         return productRepository.findByCategoryIdAndActiveTrue(categoryId).stream()
                 .map(ProductMapper::toDto)
                 .toList();
     }
 
-    @Transactional(readOnly = true)
+
     public List<ProductDto> search(String query) {
         return productRepository.findByNameContainingIgnoreCaseAndActiveTrue(query).stream()
                 .map(ProductMapper::toDto)

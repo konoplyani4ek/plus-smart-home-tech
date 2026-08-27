@@ -1,17 +1,15 @@
-// commerce/order-service/src/main/java/ru/yandex/practicum/order/mapper/OrderMapper.java
 package ru.yandex.practicum.order.mapper;
 
+import lombok.experimental.UtilityClass;
 import ru.yandex.practicum.order.dto.OrderDto;
 import ru.yandex.practicum.order.dto.OrderItemDto;
 import ru.yandex.practicum.order.entity.Order;
 import ru.yandex.practicum.order.entity.OrderItem;
 
-public final class OrderMapper {
+@UtilityClass
+public class OrderMapper {
 
-    private OrderMapper() {
-    }
-
-    public static OrderDto toDto(Order order) {
+    public OrderDto toDto(Order order) {
         return new OrderDto(
                 order.getId(),
                 order.getCustomerName(),
@@ -24,7 +22,7 @@ public final class OrderMapper {
         );
     }
 
-    public static OrderItemDto toItemDto(OrderItem item) {
+    public OrderItemDto toItemDto(OrderItem item) {
         return new OrderItemDto(
                 item.getId(),
                 item.getProductId(),
