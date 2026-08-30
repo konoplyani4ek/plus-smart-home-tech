@@ -6,9 +6,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import ru.yandex.practicum.order.client.InventoryClient;
+import ru.yandex.practicum.order.client.ProductClient;
+import ru.yandex.practicum.order.client.dto.ProductClientDto;
+import ru.yandex.practicum.order.client.dto.ReserveResponse;
 import ru.yandex.practicum.order.dto.CreateOrderRequest;
 import ru.yandex.practicum.order.dto.OrderItemRequest;
 
@@ -17,9 +22,16 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
+/**
+ * product-service и inventory-service в этом тесте не поднимаются: order-service общается
+ * с ними только через Feign-клиенты, которые здесь заменены Spring-моками ({@code @MockBean}).
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 @SuppressWarnings("unchecked")
@@ -31,14 +43,26 @@ class OrderServiceAcceptanceTest {
     @Autowired
     private ObjectMapper json;
 
+    @MockBean
+    private ProductClient productClient;
+
+    @MockBean
+    private InventoryClient inventoryClient;
+
     @Test
     void shouldCreateOrderStoreProductSnapshotAndFindOrderByIdAndEmail() throws Exception {
+        when(productClient.getById(1L))
+                .thenReturn(new ProductClientDto(1L, "Acceptance Smart Lamp", new BigDecimal("3490.00"), true));
+        when(productClient.getById(2L))
+                .thenReturn(new ProductClientDto(2L, "Acceptance Smart Plug", new BigDecimal("1290.00"), true));
+        when(inventoryClient.reserve(any())).thenReturn(new ReserveResponse(true, 10, "ok"));
+
         CreateOrderRequest request = new CreateOrderRequest(
                 "Acceptance Buyer",
                 "acceptance-buyer@example.com",
                 List.of(
-                        new OrderItemRequest(1L, "Acceptance Smart Lamp", 2, new BigDecimal("3490.00")),
-                        new OrderItemRequest(2L, "Acceptance Smart Plug", 1, new BigDecimal("1290.00"))
+                        new OrderItemRequest(1L, 2),
+                        new OrderItemRequest(2L, 1)
                 )
         );
 
@@ -53,16 +77,16 @@ class OrderServiceAcceptanceTest {
                 .as("Созданный заказ должен содержать поле id")
                 .isNotNull();
         assertThat(created.get("status"))
-                .as("На текущем этапе новый заказ должен сохраняться в статусе CREATED")
-                .isEqualTo("CREATED");
+                .as("После успешного резервирования заказ должен сохраняться в статусе CONFIRMED")
+                .isEqualTo("CONFIRMED");
         assertThat(asDecimal(created.get("totalPrice")))
-                .as("order-service должен сам рассчитывать totalPrice по снимку товаров из запроса")
+                .as("order-service должен сам рассчитывать totalPrice по снимку товаров, полученному из product-service")
                 .isEqualByComparingTo("8270.00");
         assertThat((List<?>) created.get("items"))
                 .as("Заказ должен хранить позиции заказа")
                 .hasSize(2)
                 .anySatisfy(item -> assertThat((Map<String, Object>) item)
-                        .as("Позиция заказа должна хранить снимок названия и цены товара из запроса")
+                        .as("Позиция заказа должна хранить снимок названия и цены товара, полученный из product-service")
                         .containsEntry("productName", "Acceptance Smart Lamp"));
 
         MvcResult byIdResponse = mvc.perform(get("/api/orders/{id}", orderId)).andReturn();
@@ -75,7 +99,7 @@ class OrderServiceAcceptanceTest {
                 .isEqualTo("acceptance-buyer@example.com");
 
         MvcResult byEmailResponse = mvc.perform(get("/api/orders/by-email")
-                .param("email", "acceptance-buyer@example.com"))
+                        .param("email", "acceptance-buyer@example.com"))
                 .andReturn();
 
         assertThat(status(byEmailResponse))
@@ -85,6 +109,27 @@ class OrderServiceAcceptanceTest {
                 .as("Поиск заказов по email должен вернуть созданный заказ")
                 .anySatisfy(item -> assertThat(item)
                         .containsEntry("customerEmail", "acceptance-buyer@example.com"));
+    }
+
+    @Test
+    void shouldReturnUnprocessableEntityWhenProductIsInactive() throws Exception {
+        when(productClient.getById(anyLong()))
+                .thenReturn(new ProductClientDto(1L, "Discontinued Lamp", new BigDecimal("999.00"), false));
+
+        CreateOrderRequest request = new CreateOrderRequest(
+                "Acceptance Buyer",
+                "acceptance-buyer@example.com",
+                List.of(new OrderItemRequest(1L, 1))
+        );
+
+        MvcResult response = postJson("/api/orders", request);
+
+        assertThat(status(response))
+                .as("Заказ на товар, снятый с продажи, не должен создаваться: HTTP 422 Unprocessable Entity")
+                .isEqualTo(422);
+        assertThat(readMap(response))
+                .as("Ответ ошибки должен содержать понятное сообщение сценария заказа")
+                .containsKey("message");
     }
 
     @Test
@@ -107,8 +152,8 @@ class OrderServiceAcceptanceTest {
 
     private MvcResult postJson(String url, Object body) throws Exception {
         return mvc.perform(post(url)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(json.writeValueAsString(body)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsString(body)))
                 .andReturn();
     }
 
