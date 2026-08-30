@@ -17,3 +17,10 @@ eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
+  instance:
+    # По умолчанию instance-id строится с плейсхолдером ${server.port}, который при
+    # server.port: 0 резолвится ДО того, как сервер реально выберет случайный порт.
+    # В результате у всех инстансов на одном хосте получается одинаковый instance-id,
+    # и Eureka считает их одной и той же записью — каждый новый запуск перезатирает
+    # предыдущую. random.value гарантирует уникальность на каждый процесс.
+    instance-id: ${spring.application.name}:${random.value}
