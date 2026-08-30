@@ -2,10 +2,13 @@ server:
   port: 0
 
 spring:
+  application:
+    name: order-service
   datasource:
     url: jdbc:postgresql://localhost:5432/order_db
     username: postgres
     password: postgres
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
@@ -13,6 +16,10 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
 
 feign:
   client:
@@ -27,10 +34,23 @@ feign:
       inventory-service:
         connectTimeout: 2000
         readTimeout: 4000
-        loggerLevel: basic
+        loggerLevel: BASIC
 
 logging:
   level:
     # Уровень BASIC для клиента задаётся выше (feign.client.config.inventory-service.loggerLevel),
     # но сами логи появятся только если Java-логгер интерфейса включён на DEBUG.
     ru.yandex.practicum.order.client.InventoryClient: DEBUG
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-size: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 3s

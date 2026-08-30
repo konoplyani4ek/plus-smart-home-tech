@@ -19,14 +19,21 @@ import java.util.Map;
 @RequiredArgsConstructor
 class OrderPersistenceService {
 
+    private static final String PENDING_REVIEW_DETAILS =
+            "Заказ требует ручной проверки: во время оформления product-service или "
+                    + "inventory-service были технически недоступны, часть данных нужно проверить вручную.";
+
     private final OrderRepository orderRepository;
 
     @Transactional
-    public Order save(CreateOrderRequest request, Map<Long, ProductClientDto> productById) {
+    public Order save(CreateOrderRequest request, Map<Long, ProductClientDto> productById, boolean degraded) {
         Order order = new Order();
         order.setCustomerName(request.customerName());
         order.setCustomerEmail(request.customerEmail());
-        order.setStatus(OrderStatus.CONFIRMED);
+        order.setStatus(degraded ? OrderStatus.PENDING_CONFIRMATION : OrderStatus.CONFIRMED);
+        if (degraded) {
+            order.setStatusDetails(PENDING_REVIEW_DETAILS);
+        }
 
         BigDecimal totalPrice = BigDecimal.ZERO;
 
