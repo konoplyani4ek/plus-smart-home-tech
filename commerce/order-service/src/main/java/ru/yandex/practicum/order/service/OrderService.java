@@ -8,12 +8,15 @@ import ru.yandex.practicum.order.dto.CreateOrderRequest;
 import ru.yandex.practicum.order.dto.OrderDto;
 import ru.yandex.practicum.order.dto.OrderItemRequest;
 import ru.yandex.practicum.order.entity.Order;
+import ru.yandex.practicum.order.exception.InventoryServiceUnavailableException;
 import ru.yandex.practicum.order.exception.NotFoundException;
 import ru.yandex.practicum.order.exception.OrderProcessingException;
+import ru.yandex.practicum.order.exception.ProductServiceUnavailableException;
 import ru.yandex.practicum.order.feign.*;
 import ru.yandex.practicum.order.mapper.OrderMapper;
 import ru.yandex.practicum.order.repository.OrderRepository;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,28 +33,23 @@ public class OrderService {
     private final OrderPersistenceService orderPersistenceService;
 
     public OrderDto create(CreateOrderRequest request) {
-        // 1. Суммарное количество по каждому productId — для одного резерва на суммарное
-        //    количество, даже если товар встречается в заказе несколько раз.
         Map<Long, Integer> quantityByProductId = aggregateQuantities(request);
 
-        // 2. Данные товара запрашиваются один раз на каждый уникальный productId
-        //    и переиспользуются для всех позиций заказа с этим productId.
-        Map<Long, ProductClientDto> productById = fetchAndValidateProducts(quantityByProductId.keySet());
+        ProductFetchResult productFetchResult = fetchAndValidateProducts(quantityByProductId.keySet());
 
-        // 3. Резервирование остатков на складе. Успешные резервы запоминаем,
-        //    чтобы иметь возможность их компенсировать при ошибке дальше по сценарию.
         List<Long> reservedProductIds = new ArrayList<>();
+        boolean inventoryDegraded;
         try {
-            reserveStock(quantityByProductId, reservedProductIds);
+            inventoryDegraded = reserveStock(quantityByProductId, reservedProductIds);
         } catch (RuntimeException e) {
             compensateReservations(reservedProductIds, quantityByProductId);
             throw e;
         }
 
-        // 4. Сохранение заказа со снимком товарных данных — в отдельной DB-транзакции,
-        //    без каких-либо сетевых вызовов внутри неё.
+        boolean degraded = productFetchResult.degraded() || inventoryDegraded;
+
         try {
-            Order savedOrder = orderPersistenceService.save(request, productById);
+            Order savedOrder = orderPersistenceService.save(request, productFetchResult.productById(), degraded);
             return OrderMapper.toDto(savedOrder);
         } catch (RuntimeException e) {
             log.error("Не удалось сохранить заказ после успешного резервирования, выполняется компенсация", e);
@@ -89,17 +87,32 @@ public class OrderService {
         return quantityByProductId;
     }
 
-    private Map<Long, ProductClientDto> fetchAndValidateProducts(Iterable<Long> productIds) {
+    private record ProductFetchResult(Map<Long, ProductClientDto> productById, boolean degraded) {
+    }
+
+    private ProductFetchResult fetchAndValidateProducts(Iterable<Long> productIds) {
         Map<Long, ProductClientDto> productById = new LinkedHashMap<>();
+        boolean degraded = false;
         for (Long productId : productIds) {
-            ProductClientDto product = fetchProduct(productId);
-            if (Boolean.FALSE.equals(product.active())) {
-                throw new OrderProcessingException(
-                        "Товар '" + product.name() + "' (id=" + productId + ") снят с продажи");
+            try {
+                ProductClientDto product = fetchProduct(productId);
+                if (Boolean.FALSE.equals(product.active())) {
+                    throw new OrderProcessingException(
+                            "Товар '" + product.name() + "' (id=" + productId + ") снят с продажи");
+                }
+                productById.put(productId, product);
+            } catch (ProductServiceUnavailableException e) {
+                log.warn("product-service недоступен для productId={}, заказ будет принят на проверку: {}",
+                        productId, e.getMessage());
+                productById.put(productId, placeholderProduct(productId));
+                degraded = true;
             }
-            productById.put(productId, product);
         }
-        return productById;
+        return new ProductFetchResult(productById, degraded);
+    }
+
+    private ProductClientDto placeholderProduct(Long productId) {
+        return new ProductClientDto(productId, "Товар #" + productId + " (ожидает проверки)", BigDecimal.ZERO, true);
     }
 
     private ProductClientDto fetchProduct(Long productId) {
@@ -107,13 +120,16 @@ public class OrderService {
             return productClient.getById(productId);
         } catch (FeignException.NotFound e) {
             throw new OrderProcessingException("Товар с id=" + productId + " не найден в каталоге");
+        } catch (ProductServiceUnavailableException e) {
+            throw e;
         } catch (FeignException e) {
             throw new OrderProcessingException(
                     "Не удалось получить данные о товаре id=" + productId + " из каталога", e);
         }
     }
 
-    private void reserveStock(Map<Long, Integer> quantityByProductId, List<Long> reservedProductIds) {
+    private boolean reserveStock(Map<Long, Integer> quantityByProductId, List<Long> reservedProductIds) {
+        boolean degraded = false;
         for (Map.Entry<Long, Integer> entry : quantityByProductId.entrySet()) {
             Long productId = entry.getKey();
             Integer quantity = entry.getValue();
@@ -126,25 +142,25 @@ public class OrderService {
             } catch (FeignException.Conflict e) {
                 throw new OrderProcessingException(
                         "Недостаточно товара на складе для id=" + productId);
+            } catch (InventoryServiceUnavailableException e) {
+                log.warn("inventory-service недоступен для productId={}, заказ будет принят на проверку: {}",
+                        productId, e.getMessage());
+                degraded = true;
             } catch (FeignException e) {
                 throw new OrderProcessingException(
                         "Не удалось зарезервировать товар id=" + productId + " на складе", e);
             }
         }
+        return degraded;
     }
 
-    /**
-     * Снимает уже созданные резервы для тех productId, по которым резервирование
-     * прошло успешно, если сценарий заказа сорвался позже. Ошибка самой компенсации
-     * логируется, но не подменяет исходную ошибку сценария заказа.
-     */
     private void compensateReservations(List<Long> reservedProductIds, Map<Long, Integer> quantityByProductId) {
         for (Long productId : reservedProductIds) {
             Integer quantity = quantityByProductId.get(productId);
             try {
                 inventoryClient.release(new ReleaseRequest(productId, quantity));
                 log.info("Резерв снят по компенсации: productId={}, quantity={}", productId, quantity);
-            } catch (FeignException e) {
+            } catch (RuntimeException e) {
                 log.error("Не удалось снять резерв по компенсации для productId={}, quantity={}: {}",
                         productId, quantity, e.getMessage());
             }
