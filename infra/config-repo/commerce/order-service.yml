@@ -1,0 +1,36 @@
+server:
+  port: 0
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/order_db
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+feign:
+  client:
+    config:
+      # Общие таймауты применяются ко всем Feign-клиентам order-service,
+      # если для конкретного клиента не задано отдельное значение.
+      default:
+        connectTimeout: 3000
+        readTimeout: 3000
+      # Отдельные, более узкие таймауты для складского вызова: резервирование должно
+      # отвечать быстрее, чем каталог, и на нём же включено BASIC-логирование Feign.
+      inventory-service:
+        connectTimeout: 2000
+        readTimeout: 4000
+        loggerLevel: basic
+
+logging:
+  level:
+    # Уровень BASIC для клиента задаётся выше (feign.client.config.inventory-service.loggerLevel),
+    # но сами логи появятся только если Java-логгер интерфейса включён на DEBUG.
+    ru.yandex.practicum.order.client.InventoryClient: DEBUG
