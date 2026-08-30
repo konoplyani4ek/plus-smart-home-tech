@@ -37,7 +37,6 @@ public class ProductService {
                 .toList();
     }
 
-
     public List<ProductDto> search(String query) {
         return productRepository.findByNameContainingIgnoreCaseAndActiveTrue(query).stream()
                 .map(ProductMapper::toDto)

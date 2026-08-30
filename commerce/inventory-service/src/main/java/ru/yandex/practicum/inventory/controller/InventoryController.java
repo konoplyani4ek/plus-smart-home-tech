@@ -40,6 +40,15 @@ public class InventoryController {
         return inventoryService.reserve(request);
     }
 
+    /**
+     * Компенсация резерва: используется order-service для отката резервирования,
+     * если сценарий оформления заказа сорвался после того, как резерв уже был создан.
+     */
+    @PostMapping("/release")
+    public ReserveResponse release(@Valid @RequestBody ReserveRequest request) {
+        return inventoryService.release(request);
+    }
+
     @GetMapping
     public List<InventoryDto> getAll() {
         return inventoryService.getAll();

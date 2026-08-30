@@ -52,14 +52,36 @@ public class InventoryService {
         if (record.getAvailableQuantity() < request.quantity()) {
             throw new InsufficientStockException(
                     "Недостаточно товара на складе для productId=" + request.productId()
-                        + ". Доступно: " + record.getAvailableQuantity()
-                        + ", запрошено: " + request.quantity());
+                            + ". Доступно: " + record.getAvailableQuantity()
+                            + ", запрошено: " + request.quantity());
         }
 
         record.setReservedQuantity(record.getReservedQuantity() + request.quantity());
         inventoryRepository.save(record);
 
         return new ReserveResponse(true, record.getAvailableQuantity(), "Резервирование выполнено успешно");
+    }
+
+    /**
+     * Компенсация резерва: снимает ранее зарезервированное количество товара.
+     * Используется order-service, если сценарий оформления заказа сорвался
+     * уже после успешного резервирования.
+     */
+    @Transactional
+    public ReserveResponse release(ReserveRequest request) {
+        InventoryRecord record = findEntity(request.productId());
+
+        if (record.getReservedQuantity() < request.quantity()) {
+            throw new IllegalArgumentException(
+                    "Нельзя снять резерв для productId=" + request.productId()
+                            + ": зарезервировано " + record.getReservedQuantity()
+                            + ", запрошено к снятию " + request.quantity());
+        }
+
+        record.setReservedQuantity(record.getReservedQuantity() - request.quantity());
+        inventoryRepository.save(record);
+
+        return new ReserveResponse(true, record.getAvailableQuantity(), "Резерв снят успешно");
     }
 
     private InventoryRecord findEntity(Long productId) {
