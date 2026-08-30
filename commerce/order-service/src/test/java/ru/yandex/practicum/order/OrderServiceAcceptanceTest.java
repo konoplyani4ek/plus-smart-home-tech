@@ -10,12 +10,13 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import ru.yandex.practicum.order.client.InventoryClient;
-import ru.yandex.practicum.order.client.ProductClient;
-import ru.yandex.practicum.order.client.dto.ProductClientDto;
-import ru.yandex.practicum.order.client.dto.ReserveResponse;
+
 import ru.yandex.practicum.order.dto.CreateOrderRequest;
 import ru.yandex.practicum.order.dto.OrderItemRequest;
+import ru.yandex.practicum.order.feign.InventoryClient;
+import ru.yandex.practicum.order.feign.ProductClient;
+import ru.yandex.practicum.order.feign.ProductClientDto;
+import ru.yandex.practicum.order.feign.ReserveResponse;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -28,10 +29,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-/**
- * product-service и inventory-service в этом тесте не поднимаются: order-service общается
- * с ними только через Feign-клиенты, которые здесь заменены Spring-моками ({@code @MockBean}).
- */
+
 @SpringBootTest
 @AutoConfigureMockMvc
 @SuppressWarnings("unchecked")
